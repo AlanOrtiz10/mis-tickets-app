@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../data/repositories/ticket_repository.dart';
 
 /// Pantalla para agregar un nuevo ticket
@@ -25,6 +26,7 @@ class _PantallaAgregarTicketState extends State<PantallaAgregarTicket> {
 
   File? _imagenSeleccionada;
   String _categoriaSeleccionada = 'Alimentos';
+  DateTime _fechaSeleccionada = DateTime.now();
   bool _cargando = false;
 
   // Categorías disponibles
@@ -128,6 +130,26 @@ class _PantallaAgregarTicketState extends State<PantallaAgregarTicket> {
     );
   }
 
+  /// Muestra el selector de fecha
+  Future<void> _seleccionarFecha() async {
+    final fechaElegida = await showDatePicker(
+      context: context,
+      initialDate: _fechaSeleccionada,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      locale: const Locale('es', 'MX'),
+      helpText: 'Selecciona la fecha del ticket',
+      cancelText: 'Cancelar',
+      confirmText: 'Aceptar',
+    );
+
+    if (fechaElegida != null && fechaElegida != _fechaSeleccionada) {
+      setState(() {
+        _fechaSeleccionada = fechaElegida;
+      });
+    }
+  }
+
   /// Guarda el ticket en Supabase
   Future<void> _guardarTicket() async {
     // Validar formulario
@@ -159,6 +181,7 @@ class _PantallaAgregarTicketState extends State<PantallaAgregarTicket> {
         imagenFile: _imagenSeleccionada!,
         monto: monto,
         categoria: _categoriaSeleccionada,
+        fechaTicket: _fechaSeleccionada,
       );
 
       if (mounted) {
@@ -338,6 +361,57 @@ class _PantallaAgregarTicketState extends State<PantallaAgregarTicket> {
                           });
                         }
                       },
+              ),
+              const SizedBox(height: 20),
+
+              // Selector de Fecha
+              InkWell(
+                onTap: _cargando ? null : _seleccionarFecha,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Fecha del Ticket',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('dd/MM/yyyy').format(_fechaSeleccionada),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey[400],
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
 

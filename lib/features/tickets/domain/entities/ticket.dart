@@ -18,7 +18,10 @@ class Ticket {
   /// URL pública de la imagen del ticket en Supabase Storage
   final String imagenUrl;
 
-  /// Fecha de creación del ticket
+  /// Fecha del ticket/gasto (cuando se realizó el gasto)
+  final DateTime fechaTicket;
+
+  /// Fecha de creación del registro (cuando se guardó en la app)
   final DateTime fechaCreacion;
 
   /// Constructor
@@ -28,6 +31,7 @@ class Ticket {
     required this.monto,
     required this.categoria,
     required this.imagenUrl,
+    required this.fechaTicket,
     required this.fechaCreacion,
   });
 
@@ -41,6 +45,7 @@ class Ticket {
   ///   "monto": 150.50,
   ///   "categoria": "Alimentos",
   ///   "imagen_url": "https://...",
+  ///   "fecha_ticket": "2024-01-15",
   ///   "created_at": "2024-01-15T10:30:00Z"
   /// }
   /// ```
@@ -51,6 +56,7 @@ class Ticket {
       monto: (json['monto'] as num).toDouble(),
       categoria: json['categoria'] as String,
       imagenUrl: json['imagen_url'] as String,
+      fechaTicket: DateTime.parse(json['fecha_ticket'] as String),
       fechaCreacion: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -64,6 +70,7 @@ class Ticket {
       'monto': monto,
       'categoria': categoria,
       'imagen_url': imagenUrl,
+      'fecha_ticket': fechaTicket.toIso8601String().split('T')[0], // Solo la fecha (YYYY-MM-DD)
     };
   }
 
@@ -74,6 +81,7 @@ class Ticket {
     double? monto,
     String? categoria,
     String? imagenUrl,
+    DateTime? fechaTicket,
     DateTime? fechaCreacion,
   }) {
     return Ticket(
@@ -82,13 +90,14 @@ class Ticket {
       monto: monto ?? this.monto,
       categoria: categoria ?? this.categoria,
       imagenUrl: imagenUrl ?? this.imagenUrl,
+      fechaTicket: fechaTicket ?? this.fechaTicket,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
     );
   }
 
   @override
   String toString() {
-    return 'Ticket(id: $id, monto: $monto, categoria: $categoria, fecha: $fechaCreacion)';
+    return 'Ticket(id: $id, monto: $monto, categoria: $categoria, fechaTicket: $fechaTicket)';
   }
 
   @override

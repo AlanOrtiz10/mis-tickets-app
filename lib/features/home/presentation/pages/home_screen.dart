@@ -505,7 +505,7 @@ class _TicketCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          formatearFecha(ticket.fechaCreacion),
+                          formatearFecha(ticket.fechaTicket),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],

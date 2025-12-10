@@ -63,6 +63,7 @@ class RepositorioTicket {
   /// - [imagenFile]: Archivo de imagen capturado (desde cámara o galería)
   /// - [monto]: Monto del ticket en pesos
   /// - [categoria]: Categoría del gasto
+  /// - [fechaTicket]: Fecha del ticket/gasto
   ///
   /// Proceso:
   /// 1. Sube la imagen a Supabase Storage (bucket 'tickets-images')
@@ -80,6 +81,7 @@ class RepositorioTicket {
     required File imagenFile,
     required double monto,
     required String categoria,
+    required DateTime fechaTicket,
   }) async {
     try {
       // Verificar que hay un usuario autenticado
@@ -109,6 +111,7 @@ class RepositorioTicket {
         'monto': monto,
         'categoria': categoria,
         'imagen_url': imagenUrl,
+        'fecha_ticket': fechaTicket.toIso8601String().split('T')[0], // Solo fecha (YYYY-MM-DD)
       };
 
       final response = await _cliente
