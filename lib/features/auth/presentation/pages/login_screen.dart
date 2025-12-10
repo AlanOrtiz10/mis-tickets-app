@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../../home/presentation/pages/home_screen.dart';
 
-/// Pantalla de inicio de sesión para MisTickets
+/// Pantalla de inicio de sesión y registro para MisTickets
 ///
-/// Esta pantalla permite a los usuarios autenticarse usando su
-/// correo institucional y contraseña de la Universidad.
+/// Esta pantalla permite a los usuarios:
+/// - Autenticarse usando su correo institucional y contraseña
+/// - Registrarse como nuevos usuarios
+/// - Cambiar entre modo login y registro
 ///
 /// Funcionalidades:
 /// - Campo de correo electrónico institucional
 /// - Campo de contraseña con opción de mostrar/ocultar
 /// - Validación de campos antes de enviar
-/// - Botón de ingreso que conectará con Supabase Auth
+/// - Integración con Supabase Auth
+/// - Navegación a pantalla principal tras autenticación exitosa
 class PantallaLogin extends StatefulWidget {
   const PantallaLogin({super.key});
 
@@ -25,11 +31,17 @@ class _PantallaLoginState extends State<PantallaLogin> {
   // Llave global para el formulario (validación)
   final GlobalKey<FormState> _llaveFormulario = GlobalKey<FormState>();
 
+  // Repositorio de autenticación
+  final RepositorioAuth _repositorioAuth = RepositorioAuth();
+
   // Estado para mostrar/ocultar contraseña
   bool _ocultarContrasena = true;
 
   // Estado de carga durante autenticación
   bool _cargando = false;
+
+  // Estado para alternar entre Login y Registro
+  bool _modoRegistro = false;
 
   @override
   void dispose() {
@@ -51,30 +63,49 @@ class _PantallaLoginState extends State<PantallaLogin> {
     });
 
     try {
-      // TODO: Implementar autenticación con Supabase
-      // await supabase.auth.signInWithPassword(
-      //   email: _controladorCorreo.text.trim(),
-      //   password: _controladorContrasena.text,
-      // );
-
-      // Simulación temporal
-      await Future.delayed(const Duration(seconds: 2));
+      // Iniciar sesión con Supabase
+      await _repositorioAuth.iniciarSesion(
+        email: _controladorCorreo.text.trim(),
+        password: _controladorContrasena.text,
+      );
 
       if (mounted) {
-        // TODO: Navegar a la pantalla principal después de login exitoso
+        // Navegar a la pantalla principal y eliminar todas las rutas anteriores
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const PantallaHome()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (e) {
+      // Errores de autenticación de Supabase
+      if (mounted) {
+        String mensaje = 'Error al iniciar sesión';
+
+        // Mensajes más amigables para errores comunes
+        if (e.message.contains('Invalid login credentials')) {
+          mensaje = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+        } else if (e.message.contains('Email not confirmed')) {
+          mensaje = 'Por favor confirma tu email antes de iniciar sesión.';
+        } else {
+          mensaje = e.message;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Inicio de sesión exitoso'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(mensaje),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     } catch (error) {
+      // Otros errores (red, etc.)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al iniciar sesión: $error'),
+            content: Text('Error: ${error.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -85,6 +116,98 @@ class _PantallaLoginState extends State<PantallaLogin> {
         });
       }
     }
+  }
+
+  /// Valida y procesa el registro de un nuevo usuario
+  Future<void> _registrarse() async {
+    // Validar que los campos cumplan con las reglas
+    if (!_llaveFormulario.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _cargando = true;
+    });
+
+    try {
+      // Registrar usuario en Supabase
+      final respuesta = await _repositorioAuth.registrarse(
+        email: _controladorCorreo.text.trim(),
+        password: _controladorContrasena.text,
+      );
+
+      if (mounted) {
+        // Verificar si se requiere confirmación de email
+        if (respuesta.user != null && respuesta.session == null) {
+          // Supabase requiere confirmación de email
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Registro exitoso. Por favor confirma tu email para iniciar sesión.',
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 6),
+            ),
+          );
+          // Cambiar a modo login
+          setState(() {
+            _modoRegistro = false;
+          });
+        } else {
+          // Registro exitoso con sesión automática
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const PantallaHome()),
+            (route) => false,
+          );
+        }
+      }
+    } on AuthException catch (e) {
+      // Errores de autenticación de Supabase
+      if (mounted) {
+        String mensaje = 'Error al registrarse';
+
+        // Mensajes más amigables para errores comunes
+        if (e.message.contains('already registered')) {
+          mensaje = 'Este email ya está registrado. Intenta iniciar sesión.';
+        } else if (e.message.contains('Password should be')) {
+          mensaje = 'La contraseña debe tener al menos 6 caracteres.';
+        } else {
+          mensaje = e.message;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensaje),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (error) {
+      // Otros errores (red, etc.)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${error.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _cargando = false;
+        });
+      }
+    }
+  }
+
+  /// Alterna entre modo login y registro
+  void _alternarModo() {
+    setState(() {
+      _modoRegistro = !_modoRegistro;
+    });
   }
 
   @override
@@ -129,11 +252,13 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Subtítulo
-                  const Text(
-                    'Gestiona tus gastos fácilmente',
+                  // Subtítulo dinámico según el modo
+                  Text(
+                    _modoRegistro
+                        ? 'Crea tu cuenta institucional'
+                        : 'Gestiona tus gastos fácilmente',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                     ),
@@ -262,9 +387,11 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Botón de Ingresar
+                  // Botón de Ingresar/Registrarse
                   ElevatedButton(
-                    onPressed: _cargando ? null : _iniciarSesion,
+                    onPressed: _cargando
+                        ? null
+                        : (_modoRegistro ? _registrarse : _iniciarSesion),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF1E3A8A),
@@ -285,9 +412,9 @@ class _PantallaLoginState extends State<PantallaLogin> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Ingresar',
-                            style: TextStyle(
+                        : Text(
+                            _modoRegistro ? 'Registrarse' : 'Ingresar',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -295,19 +422,14 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Enlace de recuperación de contraseña (futuro)
+                  // Botón para alternar entre Login y Registro
                   TextButton(
-                    onPressed: () {
-                      // TODO: Implementar recuperación de contraseña
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Función próximamente disponible'),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      '¿Olvidaste tu contraseña?',
-                      style: TextStyle(
+                    onPressed: _cargando ? null : _alternarModo,
+                    child: Text(
+                      _modoRegistro
+                          ? '¿Ya tienes cuenta? Inicia sesión'
+                          : '¿No tienes cuenta? Regístrate',
+                      style: const TextStyle(
                         color: Colors.white70,
                         decoration: TextDecoration.underline,
                       ),
