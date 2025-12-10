@@ -114,14 +114,13 @@ class _PantallaHomeState extends State<PantallaHome> {
     final formato = NumberFormat.currency(
       symbol: '\$',
       decimalDigits: 2,
-      locale: 'es_MX',
     );
     return formato.format(monto);
   }
 
   /// Formatea una fecha
   String _formatearFecha(DateTime fecha) {
-    final formato = DateFormat('dd/MM/yyyy', 'es_MX');
+    final formato = DateFormat('dd/MM/yyyy');
     return formato.format(fecha);
   }
 
