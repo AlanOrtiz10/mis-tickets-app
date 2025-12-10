@@ -265,15 +265,15 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Campo de Correo Institucional
+                  // Campo de Correo Electrónico
                   TextFormField(
                     controller: _controladorCorreo,
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: 'Correo Institucional',
+                      labelText: 'Correo Electrónico',
                       labelStyle: const TextStyle(color: Colors.white70),
-                      hintText: 'ejemplo@uthermosillo.edu.mx',
+                      hintText: 'ejemplo@correo.com',
                       hintStyle: const TextStyle(color: Colors.white38),
                       prefixIcon: const Icon(
                         Icons.email_outlined,
@@ -307,15 +307,11 @@ class _PantallaLoginState extends State<PantallaLogin> {
                     ),
                     validator: (valor) {
                       if (valor == null || valor.isEmpty) {
-                        return 'Por favor ingresa tu correo institucional';
+                        return 'Por favor ingresa tu correo electrónico';
                       }
                       // Validación básica de formato de email
                       if (!valor.contains('@') || !valor.contains('.')) {
                         return 'Por favor ingresa un correo válido';
-                      }
-                      // Validación de dominio institucional
-                      if (!valor.endsWith('@uthermosillo.edu.mx')) {
-                        return 'Usa tu correo institucional (@uthermosillo.edu.mx)';
                       }
                       return null;
                     },
