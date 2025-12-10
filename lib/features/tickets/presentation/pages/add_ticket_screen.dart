@@ -137,7 +137,6 @@ class _PantallaAgregarTicketState extends State<PantallaAgregarTicket> {
       initialDate: _fechaSeleccionada,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      locale: const Locale('es', 'MX'),
       helpText: 'Selecciona la fecha del ticket',
       cancelText: 'Cancelar',
       confirmText: 'Aceptar',
